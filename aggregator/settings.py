@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core',
+    'home',
+    'Scraper',
 ]
 
 MIDDLEWARE = [
@@ -75,13 +76,14 @@ WSGI_APPLICATION = 'aggregator.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mydb',
-        'USER': 'myuser',
-        'PASSWORD': 'mypassword',
-        'HOST': 'db',      # This matches the service name in docker-compose.yml
+        'NAME': 'jobs_data',
+        'USER': 'IIT_Ropar',
+        'PASSWORD': 'IIT123',
+        'HOST': 'db',  
         'PORT': '5432',
     }
 }
+
 
 
 
