@@ -5,3 +5,4 @@ tzdata==2025.2
 psycopg2-binary
 requests
 beautifulsoup4
+pymupdf
