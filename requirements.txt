@@ -3,6 +3,12 @@ Django==5.2.2
 sqlparse==0.5.3
 tzdata==2025.2
 psycopg2-binary
-requests
+selenium
+webdriver-manager
+pytesseract
+pdf2image
+PyMuPDF
+pillow
 beautifulsoup4
-pymupdf
+requests
+

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Summaries</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .summary-box { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Job Summaries</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit">🔄 Run Scraper</button>
+    </form>
+
+    <hr>
+
+    {% for summary in summaries %}
+        <div class="summary-box">
+            <h3>{{ summary.pdf_name }}</h3>
+            <p><strong>Source:</strong> <a href="{{ summary.source_url }}">{{ summary.source_url }}</a></p>
+            <p>{{ summary.summary_text }}</p>
+            <small>📅 {{ summary.created_at }}</small>
+        </div>
+    {% empty %}
+        <p>No summaries yet. Click "Run Scraper" to get started!</p>
+    {% endfor %}
+</body>
+</html>
