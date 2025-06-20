@@ -1,7 +1,7 @@
 from django.contrib import admin
-from django.urls import path, include  # include is important
+from django.urls import path, include  
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('Scraper.urls')),  # 👈 This connects your scraper views
+    path('scraper/', include('Scraper.urls')),  #  This connects scraper views
 ]

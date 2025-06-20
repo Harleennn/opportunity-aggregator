@@ -1,11 +1,7 @@
-from django.shortcuts import render, redirect
-from .utils import run_scraper
-from .models import JobSummary
+from django.shortcuts import render
+from .utils import process_all_pdfs
 
 def scrape_and_show(request):
-    if request.method == "POST":
-        run_scraper()
-        return redirect("scrape_and_show")  # Reload the page to show new results
-
-    summaries = JobSummary.objects.all().order_by("-created_at")
-    return render(request, "scraper/summary.html", {"summaries": summaries})
+    source_url = "https://pesco.punjab.gov.in/Advertisement"
+    summaries = process_all_pdfs(source_url)
+    return render (request, "scraper/summary.html",{"summaries": summaries})
