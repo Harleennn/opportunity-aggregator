@@ -11,4 +11,4 @@ PyMuPDF
 pillow
 beautifulsoup4
 requests
-
+certifi

@@ -9,30 +9,35 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
-from urllib.parse import urljoin  
-import ssl
-import json
+from urllib.parse import urljoin, urlparse
+import certifi
+import warnings
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-ssl._create_default_https_context = ssl._create_unverified_context
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 KEYWORDS_IN_URL = ['recruitment', 'vacancy', 'job', 'employment', 'engagement']
 TEXT_KEYWORDS = ['recruitment', 'vacancy', 'invites application', 'job', 'posts available', 'engagement']
-REQUIRED_YEAR = '2025'
+REQUIRED_YEAR = ['2023', '2024', '2025']
 
 
-
-def mock_llm_summarize(text):
+def mock_llm_summarize(text, pdf_name=None):
     # This should be replaced with real LLM logic
-    return {
-        "title": "Consultant (Retired Doctor)",
-        "eligibility": "Retired from Govt. Medical Service",
-        "minimum_qualification": "MBBS with Post-Graduation",
-        "age_limit": "Below 65 years",
-        "application_deadline": "15 July 2025",
-        "pay_scale": "Rs. 75,000 per month",
-        "employment_type": "Contractual",
-        "overall_skill": "Medical expertise, patient handling"
+    summary = {
+        "title": "Test Job",
+        "eligibility": "Any graduate",
+        "minimum_qualification": "None",
+        "age_limit": "18-35",
+        "application_deadline": "31 July 2025",
+        "pay_scale": "20,000 INR",
+        "employment_type": "Contract",
+        "overall_skill": "Typing, Communication"
     }
+    if pdf_name:
+        summary["title"] += f" - {pdf_name}"
+    return summary
+
 
 def get_driver():
     chrome_options = Options()
@@ -50,28 +55,47 @@ def get_pdf_links_from_url(url):
 
     links = []
     anchors = driver.find_elements(By.TAG_NAME, 'a')
+    
     for link in anchors:
         href = link.get_attribute("href")
         if href and href.endswith(".pdf"):
             full_href = urljoin(url, href)
-            href_lower = full_href.lower()
-
-            if any(k in href_lower for k in KEYWORDS_IN_URL) and REQUIRED_YEAR in href_lower:
-                links.append(full_href)
-
+            print(f"[DEBUG] Found PDF link: {full_href}")
+            links.append(full_href)
     driver.quit()
     return links
 
 
-
 def process_all_pdfs(source_url):
+    print(f"\n[DEBUG] Starting scrape from: {source_url}")
     pdf_links = get_pdf_links_from_url(source_url)
+    print(f"[DEBUG] Found {len(pdf_links)} PDF links.")
+    if not pdf_links:
+        print("[DEBUG] No PDF links found. Exiting.")
+        return []
+
     results = []
+    skipped = 0
+    downloaded = 0
+    errors = 0
+
+    # Setup session with retries
+    session = requests.Session()
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
 
     for pdf_url in pdf_links:
         try:
+            # Convert http to https if needed
+            if pdf_url.startswith("http://"):
+                pdf_url = pdf_url.replace("http://", "https://")
+
             print(f"\n Downloading: {pdf_url}")
-            response = requests.get(pdf_url, verify=False)
+            response = session.get(pdf_url, timeout=10, verify=certifi.where())
+            response.raise_for_status()
+
             pdf_bytes = BytesIO(response.content)
             pdf_name = pdf_url.split("/")[-1]
 
@@ -81,12 +105,13 @@ def process_all_pdfs(source_url):
 
             if not any(kw in text.lower() for kw in TEXT_KEYWORDS):
                 print(f" Skipped (not job related): {pdf_name}")
+                skipped += 1
                 continue
 
-            # Use actual LLM here
-            summary_data = mock_llm_summarize(text)
+            
+            summary_data = mock_llm_summarize(text, pdf_name=pdf_name)
 
-            # Save each field to model
+            # Save to DB
             job_summary = JobSummary.objects.create(
                 source_url=source_url,
                 pdf_name=pdf_name,
@@ -104,13 +129,19 @@ def process_all_pdfs(source_url):
                 "pdf_name": pdf_name,
                 **summary_data
             })
+            downloaded += 1
 
+        except requests.exceptions.RequestException as e:
+            print(f"[NETWORK ERROR] {pdf_url}: {e}")
+            errors += 1
+            continue
         except Exception as e:
-            print(f" Error with {pdf_url}: {e}")
+            print(f"[PROCESSING ERROR] {pdf_url}: {e}")
+            errors += 1
             continue
 
+    print(f"\n[SUMMARY] Total PDFs: {len(pdf_links)}, Downloaded: {downloaded}, Skipped: {skipped}, Errors: {errors}")
     return results
-
 
 
 def extract_text_normal(pdf_bytes):
@@ -131,7 +162,7 @@ def extract_text_ocr(pdf_bytes):
 
 def run_scraper():
     websites = [
-        "https://gmch.gov.in/jobs-and-training",  # Test Site
+        "https://chandigarh.gov.in/information/public-notices",  # Test Site
     ]
     for site in websites:
         print(f"\n Scraping site: {site}")
