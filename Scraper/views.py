@@ -1,15 +1,29 @@
 from django.shortcuts import render
 from .utils import process_all_pdfs
 from .models import JobSummary
+import threading
+
+# Define list of websites (can add more later)
+SCRAPE_SITES = [
+    "https://chandigarh.gov.in/information/public-notices",
+    # Add more URLs here
+]
+
+def background_scrape(sites):
+    for site in sites:
+        print(f"[ASYNC] Background scraping: {site}")
+        process_all_pdfs(site)
+        print(f"[ASYNC] Done scraping: {site}")
 
 def scrape_and_show(request):
-    source_url = "https://chandigarh.gov.in/information/public-notices"  # using test site for now
-    process_all_pdfs(source_url)  
+    #  Start scraping in background
+    threading.Thread(target=background_scrape, args=(SCRAPE_SITES,)).start()
 
-  
-    summaries = JobSummary.objects.filter(source_url=source_url).order_by('-created_at')
-
+    #  Show existing data from DB (doesn't wait for new scrape to finish)
+    summaries = JobSummary.objects.filter(source_url__in=SCRAPE_SITES).order_by('-created_at')[:50]
+    
     return render(request, "scraper/summary.html", {"summaries": summaries})
+
 
 
 

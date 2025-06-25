@@ -26,11 +26,43 @@
             color: #333;
             text-align: center;
         }
+        .info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #888;
+        }
+        .refresh-btn {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+        }
+        .refresh-btn button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .refresh-btn button:hover {
+            background: #2980b9;
+        }
     </style>
 </head>
 <body>
     <h1>Latest Job Summaries</h1>
-    
+
+    <div class="info">
+        <p>Scraping in background. Please refresh the page in a few seconds to see new results.</p>
+    </div>
+
+    <div class="refresh-btn">
+        <form method="get" action=".">
+            <button type="submit">🔄 Refresh</button>
+        </form>
+    </div>
+
     {% for summary in summaries %}
         <div class="summary">
             <h3>{{ summary.title }}</h3>
@@ -44,7 +76,7 @@
             <p><strong>Source:</strong> <a href="{{ summary.source_url }}" target="_blank">{{ summary.pdf_name }}</a></p>
         </div>
     {% empty %}
-        <p>No summaries found.</p>
+        <p style="text-align: center;">⏳ No summaries found yet. Scraper is running in the background.</p>
     {% endfor %}
 </body>
 </html>

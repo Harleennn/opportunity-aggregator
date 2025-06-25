@@ -9,7 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import certifi
 import warnings
 from requests.adapters import HTTPAdapter
@@ -23,7 +23,6 @@ REQUIRED_YEAR = ['2023', '2024', '2025']
 
 
 def mock_llm_summarize(text, pdf_name=None):
-    # This should be replaced with real LLM logic
     summary = {
         "title": "Test Job",
         "eligibility": "Any graduate",
@@ -55,7 +54,6 @@ def get_pdf_links_from_url(url):
 
     links = []
     anchors = driver.find_elements(By.TAG_NAME, 'a')
-    
     for link in anchors:
         href = link.get_attribute("href")
         if href and href.endswith(".pdf"):
@@ -66,10 +64,27 @@ def get_pdf_links_from_url(url):
     return links
 
 
+def extract_text_normal(pdf_bytes):
+    text = ""
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        for page in doc:
+            text += page.get_text()
+    return text
+
+
+def extract_text_ocr(pdf_bytes):
+    images = convert_from_bytes(pdf_bytes)
+    text = ""
+    for img in images:
+        text += pytesseract.image_to_string(img)
+    return text
+
+
 def process_all_pdfs(source_url):
     print(f"\n[DEBUG] Starting scrape from: {source_url}")
     pdf_links = get_pdf_links_from_url(source_url)
     print(f"[DEBUG] Found {len(pdf_links)} PDF links.")
+
     if not pdf_links:
         print("[DEBUG] No PDF links found. Exiting.")
         return []
@@ -79,7 +94,6 @@ def process_all_pdfs(source_url):
     downloaded = 0
     errors = 0
 
-    # Setup session with retries
     session = requests.Session()
     retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
     adapter = HTTPAdapter(max_retries=retries)
@@ -88,7 +102,6 @@ def process_all_pdfs(source_url):
 
     for pdf_url in pdf_links:
         try:
-            # Convert http to https if needed
             if pdf_url.startswith("http://"):
                 pdf_url = pdf_url.replace("http://", "https://")
 
@@ -108,11 +121,9 @@ def process_all_pdfs(source_url):
                 skipped += 1
                 continue
 
-            
             summary_data = mock_llm_summarize(text, pdf_name=pdf_name)
 
-            # Save to DB
-            job_summary = JobSummary.objects.create(
+            JobSummary.objects.create(
                 source_url=source_url,
                 pdf_name=pdf_name,
                 title=summary_data.get("title"),
@@ -131,6 +142,10 @@ def process_all_pdfs(source_url):
             })
             downloaded += 1
 
+        except requests.exceptions.SSLError as ssl_error:
+            print(f"[SSL ERROR] {pdf_url}: {ssl_error}")
+            errors += 1
+            continue
         except requests.exceptions.RequestException as e:
             print(f"[NETWORK ERROR] {pdf_url}: {e}")
             errors += 1
@@ -144,25 +159,9 @@ def process_all_pdfs(source_url):
     return results
 
 
-def extract_text_normal(pdf_bytes):
-    text = ""
-    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
-        for page in doc:
-            text += page.get_text()
-    return text
-
-
-def extract_text_ocr(pdf_bytes):
-    images = convert_from_bytes(pdf_bytes)
-    text = ""
-    for img in images:
-        text += pytesseract.image_to_string(img)
-    return text
-
-
 def run_scraper():
     websites = [
-        "https://chandigarh.gov.in/information/public-notices",  # Test Site
+        "https://chandigarh.gov.in/information/public-notices",  # test site
     ]
     for site in websites:
         print(f"\n Scraping site: {site}")
