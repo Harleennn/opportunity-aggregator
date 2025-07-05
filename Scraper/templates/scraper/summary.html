@@ -53,6 +53,12 @@
 <body>
     <h1>Latest Job Summaries</h1>
 
+    {% if last_scraped %}
+    <div class="info">
+        <p>📅 Last Scraped: {{ last_scraped|date:"d M Y, H:i" }} ({{ last_scraped|timesince }} ago)</p>
+    </div>
+    {% endif %}
+
     <div class="info">
         <p>Scraping in background. Please refresh the page in a few seconds to see new results.</p>
     </div>
@@ -63,20 +69,27 @@
         </form>
     </div>
 
-    {% for summary in summaries %}
+    {% for post in postings %}
         <div class="summary">
-            <h3>{{ summary.title }}</h3>
-            <p><strong>Eligibility:</strong> {{ summary.eligibility }}</p>
-            <p><strong>Qualification:</strong> {{ summary.minimum_qualification }}</p>
-            <p><strong>Age Limit:</strong> {{ summary.age_limit }}</p>
-            <p><strong>Application Deadline:</strong> {{ summary.application_deadline }}</p>
-            <p><strong>Pay Scale:</strong> {{ summary.pay_scale }}</p>
-            <p><strong>Employment Type:</strong> {{ summary.employment_type }}</p>
-            <p><strong>Required Skills:</strong> {{ summary.overall_skill }}</p>
-            <p><strong>Source:</strong> <a href="{{ summary.source_url }}" target="_blank">{{ summary.pdf_name }}</a></p>
+            {% with details=post.jobdetails.all.0 %}
+                <h3>{{ details.title }}</h3>
+                <p><strong>Eligibility:</strong> {{ details.eligibility }}</p>
+                <p><strong>Qualification:</strong> {{ details.minimum_qualification }}</p>
+                <p><strong>Required Skills:</strong> {{ details.overall_skill }}</p>
+            {% endwith %}
+
+            <p><strong>Age Limit:</strong> {{ post.age_limit }}</p>
+            <p><strong>Application Deadline:</strong> {{ post.application_deadline }}</p>
+            <p><strong>Pay Scale:</strong> {{ post.pay_scale }}</p>
+            <p><strong>Employment Type:</strong> {{ post.employment_type }}</p>
+
+            <p><strong>Source:</strong>
+                <a href="{{ post.source.url }}" target="_blank">{{ post.pdf_name }}</a>
+            </p>
+            <p><em>Extracted: {{ post.scraped_at|timesince }} ago</em></p>
         </div>
     {% empty %}
-        <p style="text-align: center;">⏳ No summaries found yet. Scraper is running in the background.</p>
+        <p style="text-align: center;">⏳ No job postings found yet. Scraper is running in the background.</p>
     {% endfor %}
 </body>
 </html>

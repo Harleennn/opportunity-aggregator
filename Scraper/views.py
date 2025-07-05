@@ -1,49 +1,50 @@
 from django.shortcuts import render
-from .utils import process_all_pdfs
-from .models import JobSummary
+from .scraper_utils.job_processor import process_all_pdfs
+from .models import JobPosting
 import threading
+from .models import JobDetails  
 
-# Define list of websites (can add more later)
+
 SCRAPE_SITES = [
-    "https://chandigarh.gov.in/information/public-notices",
-    # Add more URLs here
+        "https://chandigarh.gov.in/information/public-notices",
+        "https://chdsw.gov.in/index.php/recruitments/index",
 ]
 
+# Background thread that scrapes all sites
 def background_scrape(sites):
     for site in sites:
         print(f"[ASYNC] Background scraping: {site}")
         process_all_pdfs(site)
         print(f"[ASYNC] Done scraping: {site}")
 
+# Main view function
 def scrape_and_show(request):
-    #  Start scraping in background
+    # Start background scraping thread
     threading.Thread(target=background_scrape, args=(SCRAPE_SITES,)).start()
 
-    #  Show existing data from DB (doesn't wait for new scrape to finish)
-    summaries = JobSummary.objects.filter(source_url__in=SCRAPE_SITES).order_by('-created_at')[:50]
-    
-    return render(request, "scraper/summary.html", {"summaries": summaries})
+    # Get all job postings (you CANNOT use select_related for reverse relation)
+    postings = JobPosting.objects.filter(source__url__in=SCRAPE_SITES)\
+        .order_by('-scraped_at')[:50]
 
+    # Get latest scraped timestamp
+    last_scraped = postings[0].scraped_at if postings else None
 
+    return render(
+        request,
+        "scraper/summary.html",
+        {"postings": postings, "last_scraped": last_scraped}
+    )
+def recommend_view(request):
+    recommended_jobs = []
+    query = ""
 
+    if request.method == "POST":
+        query = request.POST.get("skills", "")
+        if query:
+            jobs = JobDetails.objects.select_related("posting").all()
+            recommended_jobs = recommend_jobs(query, jobs)
 
-# def scrape_and_show(request):
-#     source_url = "https://chdsw.gov.in/index.php/recruitments/index"
-#     process_all_pdfs(source_url)
-
-#     # 👇 TEMPORARY — add a fake record
-#     JobSummary.objects.create(
-#         source_url=source_url,
-#         pdf_name="Test.pdf",
-#         title="Test Job",
-#         eligibility="Any graduate",
-#         minimum_qualification="None",
-#         age_limit="18-35",
-#         application_deadline="31 July 2025",
-#         pay_scale="20,000 INR",
-#         employment_type="Contract",
-#         overall_skill="Typing, Communication"
-#     )
-
-#     summaries = JobSummary.objects.filter(source_url=source_url).order_by('-created_at')
-#     return render(request, "scraper/summary.html", {"summaries": summaries})
+    return render(request, "scraper/recommend.html", {
+        "recommended_jobs": recommended_jobs,
+        "query": query
+    })

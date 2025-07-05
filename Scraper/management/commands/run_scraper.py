@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from Scraper.utils import run_scraper  # update this import if your file is named differently
+from Scraper.scraper_utils.Run_scraper import run_scraper
 
 class Command(BaseCommand):
     help = 'Runs the job scraper and stores summaries in the database.'
