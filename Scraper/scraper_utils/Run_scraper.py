@@ -4,7 +4,6 @@ from .job_processor import process_all_pdfs
 def run_scraper():
     websites = [
         "https://chandigarh.gov.in/information/public-notices",
-        "https://chdsw.gov.in/index.php/recruitments/index",
     ]
 
     threads = []

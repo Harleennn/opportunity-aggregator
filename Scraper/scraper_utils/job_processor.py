@@ -12,6 +12,9 @@ from Scraper.models import Source, JobPosting, JobDetails
 from .pdf_processing import extract_text_normal, extract_text_ocr
 from .summarizer import mock_llm_summarize
 from .url_scraper import get_pdf_links_from_url
+extracted_text_data = []
+import json
+
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
@@ -41,6 +44,8 @@ def extract_text_from_pdf(pdf_bytes):
     return text
 
 
+
+
 def process_pdf(pdf_url, source_url, session):
     try:
         pdf_url = pdf_url.replace("http://", "https://")
@@ -59,7 +64,7 @@ def process_pdf(pdf_url, source_url, session):
             return "skipped"
 
         print(f"\n[DOWNLOADING] {pdf_url}")
-        response = session.get(pdf_url, timeout=10, verify=certifi.where())
+        response = session.get(pdf_url, timeout=10, verify="/etc/ssl/certs/ca-certificates.crt")
         response.raise_for_status()
 
         pdf_bytes = BytesIO(response.content)
@@ -72,6 +77,11 @@ def process_pdf(pdf_url, source_url, session):
         if not is_for_retired(text):
             print(f"[SKIPPED - Not for retired people] {pdf_name}")
             return "skipped"
+        # Add this after filtering checks
+        extracted_text_data.append({
+            "file_name": pdf_name,
+            "text": text
+        })
 
         # Summarize using LLM
         posting_data, job_details_data = mock_llm_summarize(text, pdf_name=pdf_name)
@@ -145,4 +155,12 @@ def process_all_pdfs(source_url):
                 errors += 1
 
     print(f"\n[SUMMARY] Total PDFs: {len(pdf_links)}, Downloaded: {downloaded}, Skipped: {skipped}, Errors: {errors}")
-    return results
+    
+     #  Save extracted text into a JSON file for teammate
+    with open("extracted_texts.json", "w", encoding="utf-8") as f:
+        json.dump(extracted_text_data, f, ensure_ascii=False, indent=4)
+
+    print("[DONE] Extracted texts saved to extracted_texts.json")
+
+    return results  #  return at the very end, after saving JSON
+

@@ -7,7 +7,6 @@ from .models import JobDetails
 
 SCRAPE_SITES = [
         "https://chandigarh.gov.in/information/public-notices",
-        "https://chdsw.gov.in/index.php/recruitments/index",
 ]
 
 # Background thread that scrapes all sites
