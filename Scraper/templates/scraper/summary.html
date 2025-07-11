@@ -63,12 +63,15 @@
         <p>Scraping in background. Please refresh the page in a few seconds to see new results.</p>
     </div>
 
+    <!-- 🔄 Refresh Button -->
     <div class="refresh-btn">
         <form method="get" action=".">
             <button type="submit">🔄 Refresh</button>
         </form>
     </div>
 
+
+    <!-- 🧾 All Job Postings -->
     {% for post in postings %}
         <div class="summary">
             {% with details=post.jobdetails.all.0 %}

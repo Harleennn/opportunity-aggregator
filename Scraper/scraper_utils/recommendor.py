@@ -1,15 +1,22 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from Scraper.models import JobDetails
 
-def recommend_jobs(user_input, job_queryset):
-    job_texts = [job.overall_skill or '' for job in job_queryset]
-    all_texts = [user_input] + job_texts
+def recommend_jobs(query, all_jobs):
+    input_terms = [term.strip().lower() for term in query.split(",") if term.strip()]
+    recommendations = []
 
-    tfidf = TfidfVectorizer()
-    tfidf_matrix = tfidf.fit_transform(all_texts)
-    similarity_scores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+    for job in all_jobs:
+        job_skills = job.overall_skill.lower() if job.overall_skill else ""
+        job_title = job.title.lower() if job.title else ""
+        
+        # Combine title + skills for searching
+        searchable_text = job_title + " " + job_skills
 
-    job_scores = list(zip(job_queryset, similarity_scores))
-    job_scores.sort(key=lambda x: x[1], reverse=True)
+        # Count how many input terms match
+        match_count = sum(1 for term in input_terms if term in searchable_text)
 
-    return job_scores[:5]  # Top 5 results
+        if match_count > 0:
+            recommendations.append((job, match_count))
+
+    # Sort by highest match first
+    recommendations.sort(key=lambda x: x[1], reverse=True)
+    return recommendations

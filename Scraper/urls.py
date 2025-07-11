@@ -6,5 +6,5 @@ from . import views
 
 urlpatterns = [
    path("summary/", views.scrape_and_show, name="scrape_and_show"),
-   path('recommend/', views.recommend_view, name='recommend_jobs'),
+   path("recommend/", views.recommend_view, name="recommend_jobs"),
 ]
