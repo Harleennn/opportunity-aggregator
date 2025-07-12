@@ -3,7 +3,11 @@ from .job_processor import process_all_pdfs
 
 def run_scraper():
     websites = [
+        # "https://www.nielit.gov.in/chandigarh/recruitments",
+        # "http://nrhmchd.gov.in/pages/page/recruitments",
+        # "https://gmch.gov.in/jobs-and-training",
         "https://chandigarh.gov.in/information/public-notices",
+    
     ]
 
     threads = []

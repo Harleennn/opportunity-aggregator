@@ -7,6 +7,9 @@ from .scraper_utils.recommendor import recommend_jobs
 
 
 SCRAPE_SITES = [
+        # "https://www.nielit.gov.in/chandigarh/recruitments",
+        # "http://nrhmchd.gov.in/pages/page/recruitments",
+        # "https://gmch.gov.in/jobs-and-training",
         "https://chandigarh.gov.in/information/public-notices",
 ]
 

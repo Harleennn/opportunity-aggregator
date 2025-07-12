@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 # keywird list that is used to filter pdf
 TEXT_KEYWORDS = ['recruitment', 'vacancy', 'invites application', 'job', 'posts available', 'engagement']
-RETIRED_KEYWORDS = ['retired', 'superannuated', 'pensioner', 'ex-serviceman', 'former employee']
+# RETIRED_KEYWORDS = ['retired', 'superannuated', 'pensioner', 'ex-serviceman', 'former employee']
 
 # Removes query fragments from URLs to avoid downloading duplicate PDFs.
 def normalize_url(url):
@@ -38,9 +38,9 @@ def is_job_related(text):
     text_lower = text.lower()
     return any(kw in text_lower for kw in TEXT_KEYWORDS)
 
-def is_for_retired(text):
-    text_lower = text.lower()
-    return any(kw in text_lower for kw in RETIRED_KEYWORDS)
+# def is_for_retired(text):
+#     text_lower = text.lower()
+#     return any(kw in text_lower for kw in RETIRED_KEYWORDS)
 
 # I am calling functions from pdf_processing file for normal extraction of text or using OCR if short
 def extract_text_from_pdf(pdf_bytes):
@@ -51,15 +51,29 @@ def extract_text_from_pdf(pdf_bytes):
 
 # helper function to log failed PDFs for retry later
 def log_failed_pdf(pdf_url, error_type, message=""):
-    data = {
-        "pdf_url": pdf_url,
-        "error_type": error_type,
-        "message": message
-    }
     failed_path = Path("failed_pdfs.json")
-    with open(failed_path, "a", encoding="utf-8") as f:
-        json.dump(data, f)
-        f.write("\n")
+    
+    # Check if file exists and load existing entries
+    existing_entries = set()
+    if failed_path.exists():
+        with open(failed_path, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    existing_entries.add(entry["pdf_url"])
+                except Exception:
+                    continue  # ignore malformed lines
+
+    # Only log if not already present
+    if pdf_url not in existing_entries:
+        data = {
+            "pdf_url": pdf_url,
+            "error_type": error_type,
+            "message": message
+        }
+        with open(failed_path, "a", encoding="utf-8") as f:
+            json.dump(data, f)
+            f.write("\n")
 
 # main worker function - takes pdf_url(link to pdf), source_url(link to where the pdf is found), session(used to handle retries and download pdf faster)
 def process_pdf(pdf_url, source_url, session):
@@ -95,9 +109,9 @@ def process_pdf(pdf_url, source_url, session):
             return "skipped"
 
         # Checks if the text is meant for retired professionals
-        if not is_for_retired(text):
-            print(f"[SKIPPED - Not for retired people] {pdf_name}")
-            return "skipped"
+        # if not is_for_retired(text):
+        #     print(f"[SKIPPED - Not for retired people] {pdf_name}")
+        #     return "skipped"
         
         # Adds this PDF's text content to the global list later which is written into json file
         extracted_text_data.append({
