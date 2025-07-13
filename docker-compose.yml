@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:17
+    container_name: postgres_olp
+    environment:
+      POSTGRES_DB: jobs_data
+      POSTGRES_USER: IIT_Ropar
+      POSTGRES_PASSWORD: IIT123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  pgdata:
