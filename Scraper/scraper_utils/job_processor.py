@@ -13,10 +13,10 @@ import json
 import time
 
 # project specific imports
-from Scraper.models import Source, JobPosting, JobDetails # from models for database storage
-from .pdf_processing import extract_text_normal, extract_text_ocr # for text extraction
-from .summarizer import mock_llm_summarize #llm 
-from .url_scraper import get_pdf_links_from_url #scrapes all pdf links from site
+from Scraper.models import Source, JobPosting, JobDetails  # from models for database storage
+from .pdf_processing import extract_text_normal, extract_text_ocr  # for text extraction
+from .summarizer import llm_summarize, mock_llm_summarize  # LLM integration
+from .url_scraper import get_pdf_links_from_url  # scrapes all pdf links from site
 
 # global list, used to collect raw extracted text from pdf before saving to json 
 extracted_text_data = []
@@ -24,7 +24,7 @@ extracted_text_data = []
 # Suppresses annoying warnings from requests for unverified HTTPS certificates.
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
-# keywird list that is used to filter pdf
+# keyword list that is used to filter pdf
 TEXT_KEYWORDS = ['recruitment', 'vacancy', 'invites application', 'job', 'posts available', 'engagement']
 # RETIRED_KEYWORDS = ['retired', 'superannuated', 'pensioner', 'ex-serviceman', 'former employee']
 
@@ -52,7 +52,7 @@ def extract_text_from_pdf(pdf_bytes):
 # helper function to log failed PDFs for retry later
 def log_failed_pdf(pdf_url, error_type, message=""):
     failed_path = Path("failed_pdfs.json")
-    
+
     # Check if file exists and load existing entries
     existing_entries = set()
     if failed_path.exists():
@@ -79,9 +79,9 @@ def log_failed_pdf(pdf_url, error_type, message=""):
 def process_pdf(pdf_url, source_url, session):
     try:
         pdf_url = pdf_url.replace("http://", "https://")  # Changes link to secure https://
-        pdf_url = normalize_url(pdf_url) # Removes any query or extra fragments using normalize_url
-        pdf_name = pdf_url.split("/")[-1] # Extracts just the file name like notice.pdf for saving or display
-        
+        pdf_url = normalize_url(pdf_url)  # Removes any query or extra fragments using normalize_url
+        pdf_name = pdf_url.split("/")[-1]  # Extracts just the file name like notice.pdf for saving or display
+
         # Tries to find if this source_url already exists in the Source table, if not creates new one
         source_name = urlparse(source_url).netloc or "Chandigarh Public Notices"
         source_obj, created = Source.objects.get_or_create(url=source_url, defaults={'name': source_name})
@@ -93,11 +93,11 @@ def process_pdf(pdf_url, source_url, session):
         if JobPosting.objects.filter(pdf_url=pdf_url).exists():
             print(f"[SKIPPED - Already processed] {pdf_name}")
             return "skipped"
-        
+
         # Downloads the PDF using a GET request and uses a 10 second timeout to avoid hanging
         print(f"\n[DOWNLOADING] {pdf_url}")
-        response = session.get(pdf_url, timeout=10, verify="/etc/ssl/certs/ca-certificates.crt") # checks whether the SSL certificate is trusted
-        response.raise_for_status() # throws an error if server respond with 404/500 
+        response = session.get(pdf_url, timeout=10, verify="/etc/ssl/certs/ca-certificates.crt")  # checks whether the SSL certificate is trusted
+        response.raise_for_status()  # throws an error if server respond with 404/500 
 
         # converts the pdf content into bytes stream and passes it to text extractor
         pdf_bytes = BytesIO(response.content)
@@ -112,7 +112,7 @@ def process_pdf(pdf_url, source_url, session):
         # if not is_for_retired(text):
         #     print(f"[SKIPPED - Not for retired people] {pdf_name}")
         #     return "skipped"
-        
+
         # Adds this PDF's text content to the global list later which is written into json file
         extracted_text_data.append({
             "file_name": pdf_name,
@@ -120,7 +120,26 @@ def process_pdf(pdf_url, source_url, session):
         })
 
         # Summarize using LLM
-        posting_data, job_details_data = mock_llm_summarize(text, pdf_name=pdf_name)
+        summary_text = llm_summarize(text)
+
+        if not summary_text:
+            print("[LLM FAILED] Falling back to mock summarizer.")
+            posting_data, job_details_data = mock_llm_summarize(text, pdf_name=pdf_name)
+        else:
+            # ✅ Only summary, rest are placeholders
+            posting_data = {
+                "age_limit": "NA",
+                "application_deadline": "NA",
+                "pay_scale": "NA",
+                "employment_type": "NA"
+            }
+            job_details_data = {
+                "title": f"Job - {pdf_name}",
+                "eligibility": "NA",
+                "minimum_qualification": "NA",
+                "overall_skill": "NA",
+                "summary": summary_text  # ✅ real LLM summary here
+            }
 
         # Save to DB
         job_posting = JobPosting.objects.create(
@@ -139,20 +158,21 @@ def process_pdf(pdf_url, source_url, session):
             eligibility=job_details_data.get("eligibility"),
             minimum_qualification=job_details_data.get("minimum_qualification"),
             overall_skill=job_details_data.get("overall_skill"),
+            summary=job_details_data.get("summary")
         )
 
         print(f"[SAVED] {pdf_name}")
         return "downloaded"
 
-    except requests.exceptions.SSLError as ssl_error: # If the certificate is bad or SSL fails
+    except requests.exceptions.SSLError as ssl_error:  # If the certificate is bad or SSL fails
         print(f"[SSL ERROR] {pdf_url}: {ssl_error}")
         log_failed_pdf(pdf_url, "ssl_error", str(ssl_error))
         return "error"
-    except requests.exceptions.RequestException as e: # Network problems: timeout, connection refused
+    except requests.exceptions.RequestException as e:  # Network problems: timeout, connection refused
         print(f"[NETWORK ERROR] {pdf_url}: {e}")
         log_failed_pdf(pdf_url, "network_error", str(e))
         return "error"
-    except Exception as e: 
+    except Exception as e:
         print(f"[PROCESSING ERROR] {pdf_url}: {e}")
         traceback.print_exc()
         log_failed_pdf(pdf_url, "processing_error", str(e))
@@ -194,7 +214,7 @@ def process_all_pdfs(source_url):
                 errors += 1
 
     print(f"\n[SUMMARY] Total PDFs: {len(pdf_links)}, Downloaded: {downloaded}, Skipped: {skipped}, Errors: {errors}")
-    
+
     # Save extracted text into a JSON file for teammate
     with open("extracted_texts.json", "w", encoding="utf-8") as f:
         json.dump(extracted_text_data, f, ensure_ascii=False, indent=4)
