@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scraping Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; }
+        .summary {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+        }
+        .summary h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+        .summary p {
+            margin: 5px 0;
+            white-space: pre-wrap;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #888;
+        }
+        .refresh-btn {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+        }
+        .refresh-btn button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .refresh-btn button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Latest Job Summaries</h1>
+
+    {% if last_scraped %}
+    <div class="info">
+        <p>📅 Last Scraped: {{ last_scraped|date:"d M Y, H:i" }} ({{ last_scraped|timesince }} ago)</p>
+    </div>
+    {% endif %}
+
+    <div class="info">
+        <p>Scraping in background. Please refresh the page in a few seconds to see new results.</p>
+    </div>
+
+    <!-- 🔄 Refresh Button -->
+    <div class="refresh-btn">
+        <form method="get" action=".">
+            <button type="submit">🔄 Refresh</button>
+        </form>
+    </div>
+
+    <!-- 🧾 All Job Postings -->
+    {% for post in postings %}
+        {% with details=post.jobdetails.all.0 %}
+        <div class="summary">
+            <h3>{{ details.title|default:"Untitled Job" }}</h3>
+            <p><strong>Summary:</strong>
+                {{ details.summary|default_if_none:"Summary not available."|default:"Summary not available." }}
+            </p>
+
+            <p><strong>Source:</strong>
+                <a href="{{ post.pdf_url }}" target="_blank">{{ post.pdf_name }}</a>
+            </p>
+            <p><em>Extracted: {{ post.scraped_at|timesince }} ago</em></p>
+        </div>
+        {% endwith %}
+    {% empty %}
+        <p style="text-align: center;">⏳ No job postings found yet. Scraper is running in the background.</p>
+    {% endfor %}
+</body>
+</html>

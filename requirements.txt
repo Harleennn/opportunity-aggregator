@@ -1,0 +1,15 @@
+asgiref==3.8.1
+Django>=4.0,<5.0
+sqlparse==0.5.3
+tzdata==2025.2
+psycopg2-binary
+selenium
+webdriver-manager
+pytesseract
+pdf2image
+PyMuPDF
+pillow
+beautifulsoup4
+requests
+certifi
+openai>=1.0.0
