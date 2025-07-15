@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Jobs</title>
     <link rel="stylesheet" href="../styles.css">
-    <script src="script2.js" defer></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
     <header>
@@ -33,10 +33,72 @@
             </div>
     </header>
 
-    <main>
+    <main class="job-page">
+        <section class="search-section">
+            <form>
+                <input class="search-input" type="text" placeholder="Search for your preference...">
+            </form>
+            <button class="search-button">Search</button>
+        </section>
+
+        <aside class="sidebar-section">
+            <h2>Filter by</h2>
+            <fieldset class="filter-checkbox">
+                <h3>Specialisation</h3>
+                <ul>
+                    <li>
+                        <input type="checkbox" name="skill" value="education">
+                        <label for="education">Education</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="skill" value="finance">
+                        <label for="finance">Finance</label>
+                    </li>
+                    
+                    <li>
+                        <input type="checkbox" name="skill" value="healthcare">
+                        <label for="healthcare">Healthcare</label>
+                    </li>
+                    
+                    <li>
+                        <input type="checkbox" name="skill" value="law">
+                        <label for="law">Law</label>
+                    </li>
+                </ul>
+                
+            </fieldset>
+
+            <fieldset class="filter-checkbox">
+                <h3>Region</h3>
+
+                <ul>
+                    <li>
+                        <input type="checkbox" name="region" value="chandigarh">
+                        <label for="chandigarh">Chandigarh</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="punjab">
+                        <label for="punjab">Punjab</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="delhi">
+                        <label for="delhi">New Delhi</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="bengaluru">
+                        <label for="bengaluru">Bengaluru</label>
+                    </li>
+                </ul>
+            </fieldset>
+        </aside>
+
         <section class="job-section">
-            <h1 class="section-heading">Jobs Available</h1>
-            <div class="summary-container job-grid">
+            <h1>Jobs Available</h1>
+            <div class="job-grid">
             </div>
         </section>
     </main>
