@@ -5,6 +5,6 @@ class Command(BaseCommand):
     help = 'Runs the job scraper and stores summaries in the database.'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write("🚀 Starting the scraper...")
+        self.stdout.write(" Starting the scraper...")
         run_scraper()
-        self.stdout.write(self.style.SUCCESS("✅ Scraping completed successfully."))
+        self.stdout.write(self.style.SUCCESS(" Scraping completed successfully."))

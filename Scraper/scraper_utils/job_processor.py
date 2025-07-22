@@ -15,7 +15,7 @@ import time
 # project specific imports
 from Scraper.models import Source, JobPosting, JobDetails  # from models for database storage
 from .pdf_processing import extract_text_normal, extract_text_ocr  # for text extraction
-from .summarizer import llm_summarize, mock_llm_summarize  # LLM integration
+from .summarizer import summarize  #  updated to new summarizer function
 from .url_scraper import get_pdf_links_from_url  # scrapes all pdf links from site
 
 # global list, used to collect raw extracted text from pdf before saving to json 
@@ -96,7 +96,7 @@ def process_pdf(pdf_url, source_url, session):
 
         # Downloads the PDF using a GET request and uses a 10 second timeout to avoid hanging
         print(f"\n[DOWNLOADING] {pdf_url}")
-        response = session.get(pdf_url, timeout=10, verify="/etc/ssl/certs/ca-certificates.crt")  # checks whether the SSL certificate is trusted
+        response = session.get(pdf_url, timeout=10, verify="/etc/ssl/certs/ca-certificates.crt")  # checks whether the SSL certificate is trusted and downloads the pdf into memory rather than saving it on memory
         response.raise_for_status()  # throws an error if server respond with 404/500 
 
         # converts the pdf content into bytes stream and passes it to text extractor
@@ -120,45 +120,40 @@ def process_pdf(pdf_url, source_url, session):
         })
 
         # Summarize using LLM
-        summary_text = llm_summarize(text)
+        summary_text = summarize(text)
 
-        if not summary_text:
-            print("[LLM FAILED] Falling back to mock summarizer.")
-            posting_data, job_details_data = mock_llm_summarize(text, pdf_name=pdf_name)
+        #  Show what the LLM returned
+        print("\n[ LLM Response]:", summary_text)
+
+        #  Skip if LLM gave empty or invalid output
+        if not summary_text.strip():
+            print("[ EMPTY LLM OUTPUT] Skipping this PDF.")
+            return "error"
+        
+         # Clean output if it's wrapped in ```json ... ```
+        lines = summary_text.strip().splitlines()
+        if lines[0].startswith("```") and lines[-1].startswith("```"):
+            cleaned_json = "\n".join(lines[1:-1])
         else:
-            # ✅ Only summary, rest are placeholders
-            posting_data = {
-                "age_limit": "NA",
-                "application_deadline": "NA",
-                "pay_scale": "NA",
-                "employment_type": "NA"
-            }
-            job_details_data = {
-                "title": f"Job - {pdf_name}",
-                "eligibility": "NA",
-                "minimum_qualification": "NA",
-                "overall_skill": "NA",
-                "summary": summary_text  # ✅ real LLM summary here
-            }
+            cleaned_json = summary_text  # if not wrapped, use as is
+
+        try:
+            content = json.loads(cleaned_json)
+        except json.JSONDecodeError as e:
+            print("[ JSON ERROR] Invalid JSON from LLM:", summary_text)
+            return "error"
 
         # Save to DB
         job_posting = JobPosting.objects.create(
             source=source_obj,
             pdf_name=pdf_name,
-            pdf_url=pdf_url,
-            age_limit=posting_data.get("age_limit"),
-            application_deadline=posting_data.get("application_deadline"),
-            pay_scale=posting_data.get("pay_scale"),
-            employment_type=posting_data.get("employment_type")
+            pdf_url=pdf_url
         )
 
         JobDetails.objects.create(
             posting=job_posting,
-            title=job_details_data.get("title"),
-            eligibility=job_details_data.get("eligibility"),
-            minimum_qualification=job_details_data.get("minimum_qualification"),
-            overall_skill=job_details_data.get("overall_skill"),
-            summary=job_details_data.get("summary")
+            title=content.get("title", f"Job - {pdf_name}"),
+            summary=content.get("summary", "")
         )
 
         print(f"[SAVED] {pdf_name}")

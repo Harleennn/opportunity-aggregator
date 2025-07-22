@@ -33,33 +33,74 @@
             </div>
     </header>
 
-    <main>
+    <main class="job-page">
+        <section class="search-section">
+            <form>
+                <input class="search-input" type="text" placeholder="Search for your preference...">
+            </form>
+            <button class="search-button">Search</button>
+        </section>
+
+        <aside class="sidebar-section">
+            <h2>Filter by</h2>
+            <fieldset class="filter-checkbox">
+                <h3>Specialisation</h3>
+                <ul>
+                    <li>
+                        <input type="checkbox" name="skill" value="education">
+                        <label for="education">Education</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="skill" value="finance">
+                        <label for="finance">Finance</label>
+                    </li>
+                    
+                    <li>
+                        <input type="checkbox" name="skill" value="healthcare">
+                        <label for="healthcare">Healthcare</label>
+                    </li>
+                    
+                    <li>
+                        <input type="checkbox" name="skill" value="law">
+                        <label for="law">Law</label>
+                    </li>
+                </ul>
+                
+            </fieldset>
+
+            <fieldset class="filter-checkbox">
+                <h3>Region</h3>
+
+                <ul>
+                    <li>
+                        <input type="checkbox" name="region" value="chandigarh">
+                        <label for="chandigarh">Chandigarh</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="punjab">
+                        <label for="punjab">Punjab</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="delhi">
+                        <label for="delhi">New Delhi</label>
+                    </li>
+
+                    <li>
+                        <input type="checkbox" name="region" value="bengaluru">
+                        <label for="bengaluru">Bengaluru</label>
+                    </li>
+                </ul>
+            </fieldset>
+        </aside>
+
         <section class="job-section">
-            <h1 class="section-heading">Jobs Available</h1>
-            <div class="summary-container job-grid">
-                <!----<div class="job-card">
-                    <h3>Best Jobs for Retirees</h3>
-                    <p>Explore fulfilling job options tailored for retirees, such as adjunct teaching, patient advocacy, and tour guiding. This article provides practical advice on how to embark on these roles, including necessary qualifications and potential earnings.</p>
-                    <button class="normal">Read More<img src="../icons/arrow-icon.png" alt="arrow-icon"></button>
-                </div>
-                <div class="job-card">
-                    <h3>Best Jobs for Retirees</h3>
-                    <p>Explore fulfilling job options tailored for retirees, such as adjunct teaching, patient advocacy, and tour guiding. This article provides practical advice on how to embark on these roles, including necessary qualifications and potential earnings.</p>
-                    <button class="normal">Read More<img src="../icons/arrow-icon.png" alt="arrow-icon"></button>
-                </div>
-                <div class="job-card">
-                    <h3>Best Jobs for Retirees</h3>
-                    <p>Explore fulfilling job options tailored for retirees, such as adjunct teaching, patient advocacy, and tour guiding. This article provides practical advice on how to embark on these roles, including necessary qualifications and potential earnings.</p>
-                    <button class="normal">Read More<img src="../icons/arrow-icon.png" alt="arrow-icon"></button>
-                </div>
-                <div class="job-card">
-                    <h3>Best Jobs for Retirees</h3>
-                    <p>Explore fulfilling job options tailored for retirees, such as adjunct teaching, patient advocacy, and tour guiding. This article provides practical advice on how to embark on these roles, including necessary qualifications and potential earnings.</p>
-                    <button class="normal">Read More<img src="../icons/arrow-icon.png" alt="arrow-icon"></button> 
-                </div> -->
+            <h1>Jobs Available</h1>
+            <div class="job-grid">
             </div>
         </section>
-        <!--<div class="summary-container">Loading...</div> -->
     </main>
 
     <footer>This is footer.</footer> 

@@ -1,4 +1,4 @@
-# This file is extracting text using normal or OCR-based PDf parsing
+# This file is responsible for extracting text using normal or OCR-based PDf parsing
 import fitz  # PyMuPDF
 import pytesseract
 from pdf2image import convert_from_bytes

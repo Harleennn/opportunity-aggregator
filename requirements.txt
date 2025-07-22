@@ -13,3 +13,4 @@ beautifulsoup4
 requests
 certifi
 openai>=1.0.0
+django-cors-headers
