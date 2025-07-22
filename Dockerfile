@@ -54,7 +54,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . /app
 WORKDIR /app
 
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8000
+
 # Start server (you can change this to entrypoint if needed)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
